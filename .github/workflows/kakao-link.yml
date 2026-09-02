@@ -1,0 +1,44 @@
+name: Kakao link update
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/kakao-link.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Connect Kakao chat
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("index.html")
+          html = path.read_text(encoding="utf-8")
+
+          html = html.replace(
+              '<a class="m2" href="#contact">사진 문의</a>',
+              '<a class="m2" href="https://pf.kakao.com/_xhcxcdX/chat" target="_blank" rel="noopener">사진 문의</a>'
+          )
+
+          old = "  alert('문의 내용이 작성되었습니다.' + photoText + ' 현재는 시안이므로 실제 전송은 되지 않습니다. 운영 시 사진을 포함한 문의 접수 기능으로 연결할 수 있습니다.');"
+          new = "  alert('카카오톡 상담창으로 이동합니다. 현장 사진과 문의 내용을 채팅창에서 보내주세요.');\n  window.open('https://pf.kakao.com/_xhcxcdX/chat', '_blank', 'noopener');"
+          html = html.replace(old, new)
+
+          path.write_text(html, encoding="utf-8")
+          PY
+
+      - name: Save update
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Connect photo inquiry to Kakao"
+          git push
